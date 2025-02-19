@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Customize "{{ original_cocktail.name }}"</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="card shadow-sm p-4">
+            <h4>Cocktail Details</h4>
+            {{ form | crispy }}
+        </div>
+
+        <div class="card shadow-sm p-4 mt-3">
+            <h4>Ingredients</h4>
+            {{ ingredient_formset.management_form }}
+            <div id="ingredient-formset">
+                {% for form in ingredient_formset %}
+                    <div class="row ingredient-row">
+                        <div class="col-md-5">
+                            {{ form.ingredient | as_crispy_field }}
+                        </div>
+                        <div class="col-md-5">
+                            {{ form.amount | as_crispy_field }}
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-danger remove-ingredient">Remove</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" id="add-ingredient" class="btn btn-info mt-2">Add More Ingredients</button>
+        </div>
+
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary">Save Custom Cocktail</button>
+            <a href="{% url 'bartender-lists' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<!-- JavaScript for dynamically adding/removing ingredient fields -->
+<script>
+document.getElementById("add-ingredient").addEventListener("click", function () {
+    let formsetDiv = document.getElementById("ingredient-formset");
+    let totalForms = document.getElementById("id_cocktailingredient_set-TOTAL_FORMS");
+    let formIndex = Number(totalForms.value);
+
+    let newFormHtml = formsetDiv.firstElementChild.cloneNode(true);
+    newFormHtml.innerHTML = newFormHtml.innerHTML.replace(/cocktailingredient_set-\d+/g, `cocktailingredient_set-${formIndex}`);
+
+    formsetDiv.appendChild(newFormHtml);
+    totalForms.value = formIndex + 1;
+
+    updateRemoveButtons();
+});
+
+function updateRemoveButtons() {
+    document.querySelectorAll(".remove-ingredient").forEach(button => {
+        button.addEventListener("click", function () {
+            this.closest(".ingredient-row").remove();
+        });
+    });
+}
+
+updateRemoveButtons();
+</script>
+
+{% endblock %}

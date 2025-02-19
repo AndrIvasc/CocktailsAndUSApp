@@ -32,14 +32,23 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Menu Item 1</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Menu Item 2</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Menu Item 3</a>
-                </li>
+                    <a class="nav-link" href="{% url 'cocktail-list' %}">Classic Cocktails</a>
+                 {% if user.is_authenticated and user.groups.all|length > 0 %}
+                    {% for group in user.groups.all %}
+                        {% if group.name == "bartender" %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="bartenderDropdown" role="button"
+                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Bartender Panel
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="bartenderDropdown">
+                                    <a class="dropdown-item" href="{% url 'bartender-lists' %}">My Cocktail Lists</a>
+                                    <a class="dropdown-item" href="{% url 'create-bartender-list' %}">Create New List</a>
+                                </div>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
             </ul>
 
             <!-- Search Bar -->

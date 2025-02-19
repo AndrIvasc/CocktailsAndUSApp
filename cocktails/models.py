@@ -77,9 +77,10 @@ class CocktailIngredient(models.Model):
     """Junction Table for Cocktail-Ingredient Relationship"""
     cocktail = models.ForeignKey(Cocktail, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    amount = models.CharField(max_length=100, default="To taste")
 
     def __str__(self):
-        return f"{self.ingredient.name} in {self.cocktail.name}"
+        return f"{self.amount} of {self.ingredient.name} in {self.cocktail.name}"
 
 
 class UserFavoriteList(models.Model):

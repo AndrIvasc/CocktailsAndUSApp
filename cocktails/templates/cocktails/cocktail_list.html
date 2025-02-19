@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Classic Cocktails</h2>
+    <div class="row">
+        {% for cocktail in cocktails %}
+        <div class="col-md-4">
+            <div class="card mb-4 shadow-sm">
+                <img src="{{ cocktail.image.url }}" class="card-img-top img-fluid" style="max-height: 250px; object-fit: cover;" alt="{{ cocktail.name }}">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ cocktail.name }}</h5>
+                    <a href="{% url 'cocktail-detail' cocktail.id %}" class="btn btn-primary">View Recipe</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center">No classic cocktails found.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if cocktails.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ cocktails.previous_page_number }}">Previous</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link">Page {{ cocktails.number }} of {{ cocktails.paginator.num_pages }}</span>
+            </li>
+
+            {% if cocktails.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ cocktails.next_page_number }}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ cocktails.paginator.num_pages }}">Last</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Bartender Cocktail Lists</h2>
+
+    <a href="{% url 'create-bartender-list' %}" class="btn btn-success mb-3">Create New List</a>
+
+    <h4>Your Cocktail Lists:</h4>
+    <div class="row">
+        {% for list in user_lists %}
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ list.name }}</h5>
+                        <p>By: {{ list.owner.user.username }}</p>
+                        <p>{% if list.is_public %}Public{% else %}Private{% endif %}</p>
+
+                        <h6>Cocktails in this list:</h6>
+                        <ul>
+                            {% for cocktail_entry in list.bartendercocktaillistcocktail_set.all %}
+                                <li>
+                                    <!-- Cocktail Name as Clickable Link to Details -->
+                                    <a href="{% url 'cocktail-detail' cocktail_entry.cocktail.id %}">
+                                        {{ cocktail_entry.cocktail.name }}
+                                    </a>
+
+                                    {% if not cocktail_entry.cocktail.is_classic %}
+                                        <a href="{% url 'customize-cocktail' cocktail_entry.cocktail.id %}" class="btn btn-sm btn-warning ml-2">Edit</a>
+                                    {% else %}
+                                        <a href="{% url 'customize-cocktail' cocktail_entry.cocktail.id %}" class="btn btn-sm btn-info ml-2">Customize</a>
+                                    {% endif %}
+                                    <a href="{% url 'remove-cocktail-from-list' list.id cocktail_entry.cocktail.id %}" class="btn btn-sm btn-danger ml-2">Remove</a>
+                                </li>
+                            {% empty %}
+                                <p>No cocktails in this list yet.</p>
+                            {% endfor %}
+                        </ul>
+
+                        <a href="{% url 'add-cocktail-to-list' list.id %}" class="btn btn-primary">Add Cocktails</a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <p class="text-center">You haven't created any lists yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

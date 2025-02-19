@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <img src="{{ cocktail.image.url }}" class="img-fluid rounded mx-auto d-block" style="max-width: 400px; max-height: 400px; object-fit: cover;" alt="{{ cocktail.name }}">
+        <div class="card-body">
+            <h2 class="text-center text-primary">{{ cocktail.name }}</h2>
+            <h4>Ingredients:</h4>
+            <ul>
+                {% for ingredient in cocktail.cocktail_ingredient_set.all %}
+                    <li>{{ ingredient.ingredient.name }} - {{ ingredient.amount }}</li>
+                {% endfor %}
+            </ul>
+            <h4>Instructions:</h4>
+            <p>{{ cocktail.instructions }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

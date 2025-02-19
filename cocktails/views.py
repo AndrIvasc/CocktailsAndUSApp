@@ -3,14 +3,19 @@ from django.db.models import Q
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 
-from .models import Cocktail, User
+from .models import Cocktail, User, BartenderCocktailList, BartenderCocktailListCocktail, CocktailIngredient
 from .utils import check_pasword
-from .forms import ProfileUpdateForm, UserUpdateForm
+from .forms import ProfileUpdateForm, UserUpdateForm, BartenderListForm, AddCocktailToListForm, CustomizeCocktailForm, \
+    IngredientFormSet
 
 
 def index(request):
     return render(request, 'index.html')
+
+
+"""<<<<<<<<<<<<<Classic coctail list>>>>>>>>>>>>>>>>>"""
 
 
 def search_cocktails(request):
@@ -35,12 +40,16 @@ def cocktail_list(request):
     View to display all classic cocktails with pagination.
     """
     cocktails = Cocktail.objects.filter(is_classic=True)  # Only show classic cocktails
-    paginator = Paginator(cocktails, 8)  # Show 8 cocktails per page
+    paginator = Paginator(cocktails, 5)
     page_number = request.GET.get("page")
     paged_cocktails = paginator.get_page(page_number)
 
     context = {"cocktails": paged_cocktails}
-    return render(request, "cocktail_list.html", context)
+    return render(request, "cocktails/cocktail_list.html", context)
+
+
+"""<<<<<<<<<<<<<Classic coctail list>>>>>>>>>>>>>>>>>"""
+"""<<<<<<<<<<<<<bartender func>>>>>>>>>>>>>>>>>"""
 
 
 def cocktail_detail(request, cocktail_id):
@@ -50,11 +59,151 @@ def cocktail_detail(request, cocktail_id):
     cocktail = get_object_or_404(Cocktail, id=cocktail_id, is_classic=True)
 
     context = {"cocktail": cocktail}
-    return render(request, "cocktail_detail.html", context)
+    return render(request, "cocktails/cocktail_detail.html", context)
+
+
+@login_required
+def bartender_lists(request):
+    """
+    View to display all bartender-created lists.
+    """
+    if not request.user.groups.filter(name="bartender").exists():
+        messages.error(request, "You must be a bartender to access this page.")
+        return redirect("cocktail-list")  # Redirect regular users
+
+    user_lists = BartenderCocktailList.objects.filter(owner=request.user.profile)
+    public_lists = BartenderCocktailList.objects.filter(is_public=True).exclude(owner=request.user.profile)
+
+    context = {
+        "user_lists": user_lists,
+        "public_lists": public_lists,
+    }
+    return render(request, "cocktails/bartender_lists.html", context)
+
+
+@login_required
+def create_bartender_list(request):
+    """
+    View for bartenders to create a new cocktail list.
+    """
+    if not request.user.groups.filter(name="bartender").exists():
+        messages.error(request, "You must be a bartender to create a list.")
+        return redirect("cocktail-list")
+
+    if request.method == "POST":
+        form = BartenderListForm(request.POST)
+        if form.is_valid():
+            new_list = form.save(commit=False)
+            new_list.owner = request.user.profile  # Assign the current user's profile
+            new_list.save()
+            messages.success(request, "Cocktail list created successfully!")
+            return redirect("bartender-lists")
+    else:
+        form = BartenderListForm()
+
+    context = {"form": form}
+    return render(request, "cocktails/create_bartender_list.html", context)
+
+
+@login_required
+def add_cocktail_to_list(request, list_id):
+    """
+    Allows bartenders to add cocktails to their lists.
+    """
+    cocktail_list = get_object_or_404(BartenderCocktailList, id=list_id, owner=request.user.profile)
+
+    if request.method == "POST":
+        form = AddCocktailToListForm(request.POST)
+        if form.is_valid():
+            selected_cocktail = form.cleaned_data["cocktail"]
+            BartenderCocktailListCocktail.objects.create(bartender_list=cocktail_list, cocktail=selected_cocktail)
+            messages.success(request, "Cocktail added successfully!")
+            return redirect("bartender-lists")
+    else:
+        form = AddCocktailToListForm()
+
+    context = {"form": form, "cocktail_list": cocktail_list}
+    return render(request, "cocktails/add_cocktail_to_list.html", context)
+
+
+@login_required
+def remove_cocktail_from_list(request, list_id, cocktail_id):
+    """
+    Allows bartenders to remove a cocktail from their own list.
+    """
+    bartender_list = get_object_or_404(BartenderCocktailList, id=list_id, owner=request.user.profile)
+    cocktail_entry = get_object_or_404(BartenderCocktailListCocktail, bartender_list=bartender_list,
+                                       cocktail_id=cocktail_id)
+
+    if request.method == "POST":
+        cocktail_entry.delete()
+        messages.success(request, "Cocktail removed successfully!")
+        return redirect("bartender-lists")
+
+    context = {
+        "bartender_list": bartender_list,
+        "cocktail": cocktail_entry.cocktail
+    }
+    return render(request, "cocktails/remove_cocktail_confirm.html", context)
+
+
+@login_required
+def customize_cocktail(request, cocktail_id):
+    """
+    Allows bartenders to modify a classic cocktail and save it as a new version.
+    """
+    original_cocktail = get_object_or_404(Cocktail, id=cocktail_id, is_classic=True)
+
+    if request.method == "POST":
+        form = CustomizeCocktailForm(request.POST, request.FILES, bartender=request.user.profile)
+        ingredient_formset = IngredientFormSet(request.POST)
+
+        if form.is_valid() and ingredient_formset.is_valid():
+            # Create a new cocktail with a reference to the original one
+            new_cocktail = form.save(commit=False)
+            new_cocktail.is_classic = False  # Custom cocktails are not classics
+            new_cocktail.original_cocktail = original_cocktail  # Reference to classic
+            new_cocktail.bartender = request.user  # Assign bartender ownership
+            new_cocktail.category = original_cocktail.category  # Ensure category is assigned
+            new_cocktail.save()
+
+            # Save the ingredients for the new cocktail
+            for ingredient_form in ingredient_formset:
+                if ingredient_form.cleaned_data.get("ingredient"):
+                    CocktailIngredient.objects.create(
+                        cocktail=new_cocktail,
+                        ingredient=ingredient_form.cleaned_data["ingredient"],
+                        amount=ingredient_form.cleaned_data["amount"],
+                    )
+
+            # Add to bartender's selected list
+            selected_list = form.cleaned_data.get("add_to_list")
+            if selected_list:
+                BartenderCocktailListCocktail.objects.create(
+                    bartender_list=selected_list, cocktail=new_cocktail
+                )
+
+            messages.success(request, "Custom cocktail created successfully!")
+            return redirect("bartender-lists")
+    else:
+        # Prepopulate the form with the classic cocktail's details
+        form = CustomizeCocktailForm(instance=original_cocktail, bartender=request.user.profile, initial={"category": original_cocktail.category})
+        ingredient_formset = IngredientFormSet()
+
+    context = {
+        "form": form,
+        "ingredient_formset": ingredient_formset,
+        "original_cocktail": original_cocktail,
+    }
+    return render(request, "cocktails/customize_cocktail.html", context)
+
+"""<<<<<<<<<<<<<bartender func>>>>>>>>>>>>>>>>>"""
+"""<<<<<<<<<<<<<Profile user func>>>>>>>>>>>>>>>>>"""
 
 
 @csrf_protect
 def register_user(request):
+    """User registry handling"""
     if request.method == 'GET':
         return render(request, 'registration/registration.html')
 
@@ -101,3 +250,6 @@ def get_user_profile(request):
         'u_form': u_form
     }
     return render(request, 'profile.html', context=context)
+
+
+"""<<<<<<<<<<<<<Profile user func>>>>>>>>>>>>>>>>>"""

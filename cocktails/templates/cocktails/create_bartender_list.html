@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Create a New Cocktail List</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form | crispy }}
+        <button type="submit" class="btn btn-primary">Save List</button>
+    </form>
+</div>
+{% for cocktail_entry in list.bartendercocktaillistcocktail_set.all %}
+    <li>
+        {{ cocktail_entry.cocktail.name }}
+        {% if not cocktail_entry.cocktail.is_classic %}
+            <a href="{% url 'customize-cocktail' cocktail_entry.cocktail.id %}" class="btn btn-sm btn-warning ml-2">Edit</a>
+        {% else %}
+            <a href="{% url 'customize-cocktail' cocktail_entry.cocktail.id %}" class="btn btn-sm btn-info ml-2">Customize</a>
+        {% endif %}
+        <a href="{% url 'remove-cocktail-from-list' list.id cocktail_entry.cocktail.id %}" class="btn btn-sm btn-danger ml-2">Remove</a>
+    </li>
+{% endfor %}
+{% endblock %}
