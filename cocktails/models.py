@@ -1,11 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import User
+from PIL import Image
 
 
 class Profile(models.Model):
     """Profile Model"""
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    profile_picture = models.ImageField(upload_to='profile_pics', blank=True, null=True)
+    profile_picture = models.ImageField(
+        upload_to='profile_pics',
+        default="profile_pics/default-user.png",
+        blank=True,
+        null=True
+    )
     DRINK_PREFERENCES = [
         ('Alcoholic', 'Alcoholic'),
         ('Non-Alcoholic', 'Non-Alcoholic'),
@@ -15,6 +21,14 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.profile_picture.path:
+            img = Image.open(self.profile_picture.path)
+            thumb_size = (200, 200)
+            img.thumbnail(thumb_size)
+            img.save(self.profile_picture.path)
 
 
 class Ingredient(models.Model):
