@@ -14,4 +14,6 @@ urlpatterns = [
     path("bartender/lists/<int:list_id>/remove/<int:cocktail_id>/", views.remove_cocktail_from_list,
          name="remove-cocktail-from-list"),
     path("cocktails/customize/<int:cocktail_id>/", views.customize_cocktail, name="customize-cocktail"),
+    path("cocktails/create/", views.create_cocktail, name="create-cocktail"),
+    path("public-lists/", views.public_lists, name="public-lists"),
 ]

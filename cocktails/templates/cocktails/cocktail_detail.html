@@ -6,15 +6,20 @@
         <img src="{{ cocktail.image.url }}" class="img-fluid rounded mx-auto d-block" style="max-width: 400px; max-height: 400px; object-fit: cover;" alt="{{ cocktail.name }}">
         <div class="card-body">
             <h2 class="text-center text-primary">{{ cocktail.name }}</h2>
+
             <h4>Ingredients:</h4>
             <ul>
-                {% for ingredient in cocktail.cocktail_ingredient_set.all %}
-                    <li>{{ ingredient.ingredient.name }} - {{ ingredient.amount }}</li>
+                {% for ingredient_entry in cocktail.cocktailingredient_set.all %}
+                    <li>{{ ingredient_entry.ingredient.name }} - {{ ingredient_entry.amount }}</li>
+                {% empty %}
+                    <p>No ingredients added yet.</p>
                 {% endfor %}
             </ul>
+
             <h4>Instructions:</h4>
             <p>{{ cocktail.instructions }}</p>
         </div>
     </div>
 </div>
 {% endblock %}
+

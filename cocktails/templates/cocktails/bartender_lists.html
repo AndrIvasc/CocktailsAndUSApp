@@ -4,7 +4,10 @@
 <div class="container mt-4">
     <h2 class="text-center">Bartender Cocktail Lists</h2>
 
-    <a href="{% url 'create-bartender-list' %}" class="btn btn-success mb-3">Create New List</a>
+    <div class="d-flex justify-content-between mb-3">
+        <a href="{% url 'create-bartender-list' %}" class="btn btn-success">Create New List</a>
+        <a href="{% url 'create-cocktail' %}" class="btn btn-primary">Create New Cocktail</a>
+    </div>
 
     <h4>Your Cocktail Lists:</h4>
     <div class="row">
@@ -19,18 +22,17 @@
                         <h6>Cocktails in this list:</h6>
                         <ul>
                             {% for cocktail_entry in list.bartendercocktaillistcocktail_set.all %}
-                                <li>
-                                    <!-- Cocktail Name as Clickable Link to Details -->
+                                <li class="d-flex justify-content-between align-items-center">
                                     <a href="{% url 'cocktail-detail' cocktail_entry.cocktail.id %}">
                                         {{ cocktail_entry.cocktail.name }}
                                     </a>
 
-                                    {% if not cocktail_entry.cocktail.is_classic %}
-                                        <a href="{% url 'customize-cocktail' cocktail_entry.cocktail.id %}" class="btn btn-sm btn-warning ml-2">Edit</a>
-                                    {% else %}
-                                        <a href="{% url 'customize-cocktail' cocktail_entry.cocktail.id %}" class="btn btn-sm btn-info ml-2">Customize</a>
-                                    {% endif %}
-                                    <a href="{% url 'remove-cocktail-from-list' list.id cocktail_entry.cocktail.id %}" class="btn btn-sm btn-danger ml-2">Remove</a>
+                                    <div>
+                                        {% if cocktail_entry.cocktail.is_classic %}
+                                            <a href="{% url 'customize-cocktail' cocktail_entry.cocktail.id %}" class="btn btn-sm btn-info ml-2">Customize</a>
+                                        {% endif %}
+                                        <a href="{% url 'remove-cocktail-from-list' list.id cocktail_entry.cocktail.id %}" class="btn btn-sm btn-danger ml-2">Remove</a>
+                                    </div>
                                 </li>
                             {% empty %}
                                 <p>No cocktails in this list yet.</p>
