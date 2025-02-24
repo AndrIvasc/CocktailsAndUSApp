@@ -16,4 +16,7 @@ urlpatterns = [
     path("cocktails/customize/<int:cocktail_id>/", views.customize_cocktail, name="customize-cocktail"),
     path("cocktails/create/", views.create_cocktail, name="create-cocktail"),
     path("public-lists/", views.public_lists, name="public-lists"),
+    path("favorites/", views.user_favorite_list, name="user-favorite-list"),
+    path("favorites/add/<int:cocktail_id>/", views.add_to_favorites, name="add-to-favorites"),
+    path("favorites/remove/<int:cocktail_id>/", views.remove_from_favorites, name="remove-from-favorites"),
 ]

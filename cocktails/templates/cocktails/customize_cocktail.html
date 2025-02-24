@@ -20,7 +20,6 @@
                 {% for form in ingredient_formset %}
                     <div class="row ingredient-row">
                         <div class="col-md-6">
-                            {{ form.id }}  <!-- ✅ Hidden input to track existing ingredients -->
                             {{ form.ingredient | as_crispy_field }}
                         </div>
                         <div class="col-md-4">

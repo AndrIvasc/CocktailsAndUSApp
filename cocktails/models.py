@@ -62,6 +62,7 @@ class Cocktail(models.Model):
     image = models.ImageField(upload_to='cocktails', blank=True, null=True)
     glass_type = models.CharField(max_length=100)
     ALCOHOLIC_STRENGTH = [
+        ('None', 'None'),
         ('Light', 'Light'),
         ('Medium', 'Medium'),
         ('Strong', 'Strong'),

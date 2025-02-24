@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Your Favorite Cocktails</h2>
+
+    {% if favorite_cocktails %}
+        <ul class="list-group">
+            {% for entry in favorite_cocktails %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="{% url 'cocktail-detail' entry.cocktail.id %}">
+                        {{ entry.cocktail.name }}
+                    </a>
+                    <a href="{% url 'remove-from-favorites' entry.cocktail.id %}" class="btn btn-sm btn-danger">Remove</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-center">You haven't added any favorite cocktails yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

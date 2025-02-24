@@ -33,10 +33,7 @@
             <ul class="navbar-nav mr-auto">
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'cocktail-list' %}">Classic Cocktails</a>
-                 {% if user.is_authenticated and user.groups.all|length > 0 %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'public-lists' %}">Public Lists</a>
-                    </li>
+                {% if user.is_authenticated and user.groups.all|length > 0 %} <!-- checks if the user belongs to at least one group -->
                     {% for group in user.groups.all %}
                         {% if group.name == "bartender" %}
                             <li class="nav-item dropdown">
@@ -49,6 +46,13 @@
                                     <a class="dropdown-item" href="{% url 'create-bartender-list' %}">Create New List</a>
                                 </div>
                             </li>
+                        {% elif group.name == "user" %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'public-lists' %}">Public Lists</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'user-favorite-list' %}">Favorites</a>
+                        </li>
                         {% endif %}
                     {% endfor %}
                 {% endif %}
@@ -90,10 +94,12 @@
 </nav>
 
 {% for message in messages %}
-  <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}"
-       role="alert">
+    <div class="alert
+        {% if message.tags == 'success' %}alert-success
+        {% elif message.tags == 'error' or message.tags == 'warning' %}alert-danger
+        {% else %}alert-info{% endif %}">
         {{ message }}
-  </div>
+    </div>
 {% endfor %}
 
 <div class="container mt-4">

@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 
 from .models import Cocktail, User, BartenderCocktailList, BartenderCocktailListCocktail, CocktailIngredient, \
-    UserFavoriteList
+    UserFavoriteList, UserCocktailList, Ingredient
 from .utils import check_pasword
 from .forms import ProfileUpdateForm, UserUpdateForm, BartenderListForm, AddCocktailToListForm, CustomizeCocktailForm, \
     IngredientFormSet, CreateCocktailForm
@@ -41,7 +41,7 @@ def cocktail_list(request):
     View to display all classic cocktails with pagination.
     """
     cocktails = Cocktail.objects.filter(is_classic=True)  # Only show classic cocktails
-    paginator = Paginator(cocktails, 5)
+    paginator = Paginator(cocktails, 4)
     page_number = request.GET.get("page")
     paged_cocktails = paginator.get_page(page_number)
 
@@ -55,7 +55,9 @@ def cocktail_detail(request, cocktail_id):
     """
     cocktail = get_object_or_404(Cocktail, id=cocktail_id)
 
-    context = {"cocktail": cocktail}
+    context = {
+        "cocktail": cocktail,
+    }
     return render(request, "cocktails/cocktail_detail.html", context)
 
 
@@ -210,7 +212,7 @@ def customize_cocktail(request, cocktail_id):
         # Load existing ingredients from the classic cocktail
         ingredient_queryset = CocktailIngredient.objects.filter(cocktail=original_cocktail)
 
-        # Pre-fill the formset with the existing ingredients (editable)
+        # Pre-fill the formset with the existing ingredients
         ingredient_formset = IngredientFormSet(queryset=ingredient_queryset)
 
         # Create the form using the classic cocktail's data
@@ -236,15 +238,15 @@ def create_cocktail(request):
 
         if form.is_valid() and ingredient_formset.is_valid():
             new_cocktail = form.save(commit=False)
-            new_cocktail.is_classic = False  # ✅ Ensure it's not a classic cocktail
+            new_cocktail.is_classic = False  # Ensure it's not a classic cocktail
             new_cocktail.bartender = request.user
             new_cocktail.save()
 
-            # ✅ Save the ingredients
+            # Save the ingredients
             ingredient_formset.instance = new_cocktail
             ingredient_formset.save()
 
-            # ✅ Save to bartender's list
+            # Save to bartender's list
             bartender_list = form.cleaned_data.get("add_to_list")
             if bartender_list:
                 bartender_list.bartendercocktaillistcocktail_set.create(cocktail=new_cocktail)
@@ -265,6 +267,55 @@ def create_cocktail(request):
 
 
 """<<<<<<<<<<<<<bartender func>>>>>>>>>>>>>>>>>"""
+"""<<<<<<<<<<<<<simple user func>>>>>>>>>>>>>>>>>"""
+
+
+@login_required
+def user_favorite_list(request):
+    """View the user's favorite cocktail list"""
+    favorite_list, created = UserFavoriteList.objects.get_or_create(owner=request.user.profile)
+    favorite_cocktails = UserCocktailList.objects.filter(user_list=favorite_list)
+
+    return render(request, "cocktails/user_favorite_list.html", {
+        "favorite_list": favorite_list,
+        "favorite_cocktails": favorite_cocktails,
+    })
+
+
+@login_required
+def add_to_favorites(request, cocktail_id):
+    """Add a Classic or Public Cocktail to User's Favorite List"""
+    favorite_list, created = UserFavoriteList.objects.get_or_create(owner=request.user.profile)
+    cocktail = get_object_or_404(Cocktail, id=cocktail_id)
+
+    # Ensure only Classic or Public Cocktails can be added
+    if not cocktail.is_classic and not BartenderCocktailListCocktail.objects.filter(cocktail=cocktail).exists():
+        messages.error(request, "You can only add Classic Cocktails or Public Cocktails!")
+        return redirect("cocktail-detail", cocktail_id=cocktail.id)
+
+    # Check if the cocktail is already in favorites
+    if UserCocktailList.objects.filter(user_list=favorite_list, cocktail=cocktail).exists():
+        messages.warning(request, "This cocktail is already in your favorites.")
+    else:
+        UserCocktailList.objects.create(user_list=favorite_list, cocktail=cocktail)
+        messages.success(request, "Cocktail added to favorites!")
+
+    return redirect("cocktail-detail", cocktail_id=cocktail.id)
+
+
+@login_required
+def remove_from_favorites(request, cocktail_id):
+    """Remove a Cocktail from the User's Favorite List"""
+    favorite_list = get_object_or_404(UserFavoriteList, owner=request.user.profile)
+    cocktail = get_object_or_404(Cocktail, id=cocktail_id)
+
+    UserCocktailList.objects.filter(user_list=favorite_list, cocktail=cocktail).delete()
+    messages.success(request, "Cocktail removed from favorites.")
+
+    return redirect("user-favorite-list")
+
+
+"""<<<<<<<<<<<<<simple user func>>>>>>>>>>>>>>>>>"""
 """<<<<<<<<<<<<<Profile user func>>>>>>>>>>>>>>>>>"""
 
 

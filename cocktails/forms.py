@@ -113,7 +113,7 @@ class IngredientFormSetHelper(BaseInlineFormSet):
             ingredient = form.cleaned_data.get("ingredient")
             amount = form.cleaned_data.get("amount")
 
-            # Allow empty ingredient fields (they won't be saved)
+            # Allow empty ingredient fields (they won't be saved!!!)
             if not ingredient and not amount:
                 form.cleaned_data["DELETE"] = True  # Mark form for deletion so Django ignores it
                 continue
