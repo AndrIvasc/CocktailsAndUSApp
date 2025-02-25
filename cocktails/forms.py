@@ -9,7 +9,6 @@ class ProfileUpdateForm(forms.ModelForm):
     profile_picture = forms.ImageField(
         widget=forms.ClearableFileInput(attrs={'clearable': False})
     )
-
     class Meta:
         model = Profile
         fields = ('profile_picture',)
@@ -24,7 +23,6 @@ class UserUpdateForm(forms.ModelForm):
 
 class BartenderListForm(forms.ModelForm):
     """Form for creating a bartender's cocktail list."""
-
     class Meta:
         model = BartenderCocktailList
         fields = ["name", "is_public"]
@@ -41,7 +39,6 @@ class AddCocktailToListForm(forms.Form):
 
 class CreateCocktailForm(forms.ModelForm):
     """Form for bartenders to create a new cocktail from scratch."""
-
     add_to_list = forms.ModelChoiceField(
         queryset=BartenderCocktailList.objects.none(),
         required=True,
@@ -66,7 +63,6 @@ class CreateCocktailForm(forms.ModelForm):
 
 class CustomizeCocktailForm(forms.ModelForm):
     """Form for modifying a classic cocktail and saving it as a custom version."""
-
     add_to_list = forms.ModelChoiceField(
         queryset=BartenderCocktailList.objects.none(),  # Empty initially
         required=True,
@@ -97,7 +93,6 @@ class CustomizeCocktailForm(forms.ModelForm):
 
 class IngredientFormSetHelper(BaseInlineFormSet):
     """Custom Formset that dynamically adjusts extra fields and skips blank ones"""
-
     def clean(self):
         """Override validation to allow empty ingredient fields instead of marking as required"""
         super().clean()
