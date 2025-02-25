@@ -13,12 +13,18 @@ class CocktailIngredientInline(admin.TabularInline):
 
 
 class CocktailCategoryAdmin(admin.ModelAdmin):
+    """
+    Cocktail category admin view page
+    """
     list_display = ('name', 'is_alcoholic')
     list_filter = ('is_alcoholic',)
     search_fields = ('name',)
 
 
 class CocktailAdmin(admin.ModelAdmin):
+    """
+    Cocktail admin view page
+    """
     list_display = ('name', 'category', 'is_alcoholic_display', 'bartender', 'is_classic')
     list_filter = ('is_classic', 'category__is_alcoholic')
     search_fields = ('name', 'category__name')
@@ -33,7 +39,6 @@ class CocktailAdmin(admin.ModelAdmin):
     is_alcoholic_display.short_description = "Alcoholic?"
 
 
-# Register other models normally
 admin.site.register(Profile)
 admin.site.register(Ingredient)
 admin.site.register(CocktailCategory, CocktailCategoryAdmin)

@@ -51,7 +51,6 @@ class CocktailCategory(models.Model):
         return self.name
 
 
-# Cocktail Model
 class Cocktail(models.Model):
     """Cocktail Model"""
     name = models.CharField(max_length=100)

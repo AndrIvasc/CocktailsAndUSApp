@@ -20,15 +20,12 @@ def index(request):
     """
     Display the home page with a personalized message and a cocktail image carousel.
     """
-    cocktails = Cocktail.objects.exclude(image="")  # ✅ Only show cocktails that have images
+    cocktails = Cocktail.objects.exclude(image="")
 
     context = {
-        "cocktails": cocktails,  # ✅ Pass cocktails to template
+        "cocktails": cocktails,
     }
     return render(request, "index.html", context)
-
-
-"""<<<<<<<<<<<<<Classic coctail list>>>>>>>>>>>>>>>>>"""
 
 
 def search_cocktails(request):
@@ -81,10 +78,6 @@ def public_lists(request):
         "bartender_lists": bartender_lists,
     }
     return render(request, "cocktails/public_lists.html", context)
-
-
-"""<<<<<<<<<<<<<Classic coctail list>>>>>>>>>>>>>>>>>"""
-"""<<<<<<<<<<<<<bartender func>>>>>>>>>>>>>>>>>"""
 
 
 @login_required
@@ -321,10 +314,6 @@ def delete_list(request, list_id):
     return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
 
-"""<<<<<<<<<<<<<bartender func>>>>>>>>>>>>>>>>>"""
-"""<<<<<<<<<<<<<simple user func>>>>>>>>>>>>>>>>>"""
-
-
 @login_required
 def user_favorite_list(request):
     """View the user's favorite cocktail list"""
@@ -368,10 +357,6 @@ def remove_from_favorites(request, cocktail_id):
     messages.success(request, "Cocktail removed from favorites.")
 
     return redirect("user-favorite-list")
-
-
-"""<<<<<<<<<<<<<simple user func>>>>>>>>>>>>>>>>>"""
-"""<<<<<<<<<<<<<Profile user func>>>>>>>>>>>>>>>>>"""
 
 
 @csrf_protect
@@ -428,9 +413,6 @@ def get_user_profile(request):
         'u_form': u_form
     }
     return render(request, 'profile.html', context=context)
-
-
-"""<<<<<<<<<<<<<Profile user func>>>>>>>>>>>>>>>>>"""
 
 
 def export_cocktail_pdf(request, cocktail_id):

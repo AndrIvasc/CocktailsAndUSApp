@@ -9,6 +9,20 @@
             <h2 class="text-center text-primary">{{ cocktail.name }}</h2>
 
             <!-- Cocktail Category and Alcoholic Status -->
+            <h4 class="mt-3">Ingredients:</h4>
+            <ul>
+                {% for ingredient_entry in cocktail.cocktailingredient_set.all %}
+                    <li>{{ ingredient_entry.ingredient.name }} - {{ ingredient_entry.amount }}</li>
+                    {% if ingredient_entry.ingredient.name == 'Lemon' %}
+                        <h1>ITS LEMON!</h1>
+                    {% else %}
+                        <p>Not lemon! :/</p>
+                    {% endif %}
+                {% empty %}
+                    <p>No ingredients added yet.</p>
+                {% endfor %}
+            </ul>
+
             <h5>Category:
                 <span class="text-muted">
                     {% if cocktail.category %}
@@ -28,16 +42,6 @@
                     {% if cocktail.is_classic %}Classic{% else %}Customized{% endif %}
                 </span>
             </h5>
-
-
-            <h4 class="mt-3">Ingredients:</h4>
-            <ul>
-                {% for ingredient_entry in cocktail.cocktailingredient_set.all %}
-                    <li>{{ ingredient_entry.ingredient.name }} - {{ ingredient_entry.amount }}</li>
-                {% empty %}
-                    <p>No ingredients added yet.</p>
-                {% endfor %}
-            </ul>
 
             <h4>Instructions:</h4>
             <p>{{ cocktail.instructions }}</p>
