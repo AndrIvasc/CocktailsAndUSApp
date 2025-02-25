@@ -16,15 +16,10 @@ class ProfileUpdateForm(forms.ModelForm):
 
 
 class UserUpdateForm(forms.ModelForm):
+    """Form for get user profile"""
     class Meta:
         model = User
         fields = ('email',)
-
-
-class BartenderCocktailListForm(forms.ModelForm):
-    class Meta:
-        model = BartenderCocktailList
-        fields = ['name', 'is_public']
 
 
 class BartenderListForm(forms.ModelForm):
