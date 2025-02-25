@@ -19,4 +19,7 @@ urlpatterns = [
     path("favorites/", views.user_favorite_list, name="user-favorite-list"),
     path("favorites/add/<int:cocktail_id>/", views.add_to_favorites, name="add-to-favorites"),
     path("favorites/remove/<int:cocktail_id>/", views.remove_from_favorites, name="remove-from-favorites"),
+    path("bartender/lists/<int:list_id>/toggle-visibility/", views.toggle_list_visibility, name="toggle-list-visibility"),
+    path("bartender/lists/<int:list_id>/delete/", views.delete_list, name="delete-list"),
+    path("cocktails/<int:cocktail_id>/export-pdf/", views.export_cocktail_pdf, name="export-cocktail-pdf"),
 ]

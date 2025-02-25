@@ -24,7 +24,7 @@ class CocktailAdmin(admin.ModelAdmin):
     search_fields = ('name', 'category__name')
     list_editable = ('category',)
     fields = ('name', 'category', 'image', 'instructions', 'glass_type', 'alcoholic_strength', 'is_classic')
-    inlines = [CocktailIngredientInline]  # ✅ Add ingredient editing in admin panel
+    inlines = [CocktailIngredientInline]  # Add ingredient editing in admin panel
 
     def is_alcoholic_display(self, obj):
         """Show whether the cocktail is alcoholic based on its category."""

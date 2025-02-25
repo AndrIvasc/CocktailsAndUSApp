@@ -26,6 +26,8 @@
                             {{ form.amount | as_crispy_field }}
                         </div>
                     </div>
+                {% empty %}
+                    <p>No ingredients added yet.</p>
                 {% endfor %}
             </div>
         </div>

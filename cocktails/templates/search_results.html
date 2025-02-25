@@ -8,7 +8,10 @@
         <ul class="list-group">
             {% for cocktail in cocktails %}
                 <li class="list-group-item">
-                    <strong>{{ cocktail.name }}</strong> ({{ cocktail.category.name }})
+                    <a href="{% url 'cocktail-detail' cocktail.id %}" class="text-decoration-none">
+                        <strong>{{ cocktail.name }}</strong>
+                    </a>
+                    ({{ cocktail.category.name }})
                 </li>
             {% endfor %}
         </ul>

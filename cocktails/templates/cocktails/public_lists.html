@@ -35,36 +35,5 @@
             <p class="text-center">No public bartender lists available.</p>
         {% endfor %}
     </div>
-
-    <!-- User Public Lists -->
-    <h4 class="mt-4">User Favorite Lists</h4>
-    <div class="row">
-        {% for list in user_lists %}
-            <div class="col-md-6">
-                <div class="card shadow-sm mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ list.owner.user.username }}'s Favorite List</h5>
-                        <p>{% if list.is_public %}Public{% else %}Private{% endif %}</p>
-
-                        <!-- List Cocktails -->
-                        <h6>Cocktails in this list:</h6>
-                        <ul>
-                            {% for cocktail_entry in list.usercocktaillist_set.all %}
-                                <li>
-                                    <a href="{% url 'cocktail-detail' cocktail_entry.cocktail.id %}">
-                                        {{ cocktail_entry.cocktail.name }}
-                                    </a>
-                                </li>
-                            {% empty %}
-                                <p>No cocktails in this list yet.</p>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        {% empty %}
-            <p class="text-center">No public user favorite lists available.</p>
-        {% endfor %}
-    </div>
 </div>
 {% endblock %}

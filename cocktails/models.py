@@ -70,6 +70,17 @@ class Cocktail(models.Model):
     alcoholic_strength = models.CharField(max_length=10, choices=ALCOHOLIC_STRENGTH, default='Medium')
     is_classic = models.BooleanField(default=False)
 
+    @property
+    def is_alcoholic(self):
+        """
+        Determines if the cocktail is alcoholic:
+        If `alcoholic_strength` is "None", the cocktail is non-alcoholic.
+        Otherwise, it follows the `category.is_alcoholic`.
+        """
+        if self.alcoholic_strength == "None":
+            return False
+        return self.category.is_alcoholic if self.category else False
+
     def __str__(self):
         return self.name
 

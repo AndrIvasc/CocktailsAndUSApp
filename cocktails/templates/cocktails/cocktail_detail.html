@@ -9,12 +9,26 @@
             <h2 class="text-center text-primary">{{ cocktail.name }}</h2>
 
             <!-- Cocktail Category and Alcoholic Status -->
-            <h5>Category: <span class="text-muted">{{ cocktail.category.name }}</span></h5>
-            <h5>Alcoholic:
-                <span class="badge {% if cocktail.category.is_alcoholic %}badge-danger{% else %}badge-success{% endif %}">
-                    {% if cocktail.category.is_alcoholic %}Yes{% else %}No{% endif %}
+            <h5>Category:
+                <span class="text-muted">
+                    {% if cocktail.category %}
+                        {{ cocktail.category.name }}
+                    {% else %}
+                        <em>Not Assigned</em>
+                    {% endif %}
                 </span>
             </h5>
+            <h5>Alcoholic:
+                <span class="badge {% if cocktail.is_alcoholic %}badge-danger{% else %}badge-success{% endif %}">
+                    {% if cocktail.is_alcoholic %}Yes{% else %}No{% endif %}
+                </span>
+            </h5>
+            <h5>Type:
+                <span class="badge {% if cocktail.is_classic %}badge-primary{% else %}badge-warning{% endif %}">
+                    {% if cocktail.is_classic %}Classic{% else %}Customized{% endif %}
+                </span>
+            </h5>
+
 
             <h4 class="mt-3">Ingredients:</h4>
             <ul>
@@ -30,6 +44,9 @@
         </div>
         {% if user.is_authenticated and user.groups.all|length > 0 %}
             {% for group in user.groups.all %}
+                <a href="{% url 'export-cocktail-pdf' cocktail.id %}" class="btn btn-outline-danger mt-3">
+                    📄 Download PDF
+                </a>
                 {% if group.name == "user" %}
                     <a href="{% url 'add-to-favorites' cocktail.id %}" class="btn btn-success mt-2">Add to Favorites</a>
                 {% endif %}

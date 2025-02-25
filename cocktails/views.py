@@ -4,16 +4,28 @@ from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.http import JsonResponse, HttpResponse
+from django.contrib.auth.models import Group
 
 from .models import Cocktail, User, BartenderCocktailList, BartenderCocktailListCocktail, CocktailIngredient, \
     UserFavoriteList, UserCocktailList, Ingredient
 from .utils import check_pasword
 from .forms import ProfileUpdateForm, UserUpdateForm, BartenderListForm, AddCocktailToListForm, CustomizeCocktailForm, \
     IngredientFormSet, CreateCocktailForm
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 
 def index(request):
-    return render(request, 'index.html')
+    """
+    Display the home page with a personalized message and a cocktail image carousel.
+    """
+    cocktails = Cocktail.objects.exclude(image="")  # ✅ Only show cocktails that have images
+
+    context = {
+        "cocktails": cocktails,  # ✅ Pass cocktails to template
+    }
+    return render(request, "index.html", context)
 
 
 """<<<<<<<<<<<<<Classic coctail list>>>>>>>>>>>>>>>>>"""
@@ -64,11 +76,9 @@ def cocktail_detail(request, cocktail_id):
 def public_lists(request):
     """Displays all publicly available cocktail lists from bartenders and users."""
     bartender_lists = BartenderCocktailList.objects.filter(is_public=True)
-    user_lists = UserFavoriteList.objects.filter(is_public=True)
 
     context = {
         "bartender_lists": bartender_lists,
-        "user_lists": user_lists,
     }
     return render(request, "cocktails/public_lists.html", context)
 
@@ -87,11 +97,9 @@ def bartender_lists(request):
         return redirect("cocktail-list")  # Redirect regular users
 
     user_lists = BartenderCocktailList.objects.filter(owner=request.user.profile)
-    public_lists = BartenderCocktailList.objects.filter(is_public=True).exclude(owner=request.user.profile)
 
     context = {
         "user_lists": user_lists,
-        "public_lists": public_lists,
     }
     return render(request, "cocktails/bartender_lists.html", context)
 
@@ -145,19 +153,31 @@ def add_cocktail_to_list(request, list_id):
 def remove_cocktail_from_list(request, list_id, cocktail_id):
     """
     Allows bartenders to remove a cocktail from their own list.
+    If the cocktail is not in any other list and is not a classic, it gets deleted.
     """
     bartender_list = get_object_or_404(BartenderCocktailList, id=list_id, owner=request.user.profile)
     cocktail_entry = get_object_or_404(BartenderCocktailListCocktail, bartender_list=bartender_list,
                                        cocktail_id=cocktail_id)
 
+    cocktail = cocktail_entry.cocktail
+
     if request.method == "POST":
         cocktail_entry.delete()
-        messages.success(request, "Cocktail removed successfully!")
+
+        is_in_other_lists = BartenderCocktailListCocktail.objects.filter(cocktail=cocktail).exists()
+        is_in_favorites = UserCocktailList.objects.filter(cocktail=cocktail).exists()
+
+        if not cocktail.is_classic and not is_in_other_lists and not is_in_favorites:
+            cocktail.delete()
+            messages.success(request, "Cocktail removed from list and deleted permanently.")
+        else:
+            messages.success(request, "Cocktail removed from your list.")
+
         return redirect("bartender-lists")
 
     context = {
         "bartender_list": bartender_list,
-        "cocktail": cocktail_entry.cocktail
+        "cocktail": cocktail
     }
     return render(request, "cocktails/remove_cocktail_confirm.html", context)
 
@@ -187,7 +207,10 @@ def customize_cocktail(request, cocktail_id):
             new_cocktail.is_classic = False
             new_cocktail.original_cocktail = original_cocktail
             new_cocktail.bartender = request.user
-            new_cocktail.category = original_cocktail.category
+
+            # Ensure category is saved properly
+            new_cocktail.category = form.cleaned_data.get("category", original_cocktail.category)
+
             new_cocktail.save()
 
             # Preserve old image if no new one is uploaded
@@ -199,6 +222,7 @@ def customize_cocktail(request, cocktail_id):
             ingredient_formset.instance = new_cocktail
             ingredient_formset.save()
 
+            # Add to bartender's list if selected
             bartender_list = form.cleaned_data.get("add_to_list")
             if bartender_list:
                 bartender_list.bartendercocktaillistcocktail_set.create(cocktail=new_cocktail)
@@ -212,8 +236,10 @@ def customize_cocktail(request, cocktail_id):
         # Load existing ingredients from the classic cocktail
         ingredient_queryset = CocktailIngredient.objects.filter(cocktail=original_cocktail)
 
-        # Pre-fill the formset with the existing ingredients
-        ingredient_formset = IngredientFormSet(queryset=ingredient_queryset)
+        # Pre-fill the formset with the existing ingredients from the classic cocktail
+        ingredient_formset = IngredientFormSet(queryset=ingredient_queryset, initial=[
+            {"ingredient": ing.ingredient, "amount": ing.amount} for ing in ingredient_queryset
+        ])
 
         # Create the form using the classic cocktail's data
         form = CustomizeCocktailForm(instance=original_cocktail, bartender=request.user.profile)
@@ -238,7 +264,7 @@ def create_cocktail(request):
 
         if form.is_valid() and ingredient_formset.is_valid():
             new_cocktail = form.save(commit=False)
-            new_cocktail.is_classic = False  # Ensure it's not a classic cocktail
+            new_cocktail.is_classic = False
             new_cocktail.bartender = request.user
             new_cocktail.save()
 
@@ -264,6 +290,35 @@ def create_cocktail(request):
     }
 
     return render(request, "cocktails/create_cocktail.html", context)
+
+
+@login_required
+def toggle_list_visibility(request, list_id):
+    """
+    Toggle the visibility of a bartender's cocktail list (Public <-> Private).
+    """
+    bartender_list = get_object_or_404(BartenderCocktailList, id=list_id, owner=request.user.profile)
+
+    if request.method == "POST":
+        bartender_list.is_public = not bartender_list.is_public  # ✅ Toggle visibility
+        bartender_list.save()
+        return JsonResponse({"success": True, "is_public": bartender_list.is_public})
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+@login_required
+def delete_list(request, list_id):
+    """
+    Allows a bartender to delete their own cocktail list.
+    """
+    bartender_list = get_object_or_404(BartenderCocktailList, id=list_id, owner=request.user.profile)
+
+    if request.method == "POST":
+        bartender_list.delete()  # Delete the list
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
 
 
 """<<<<<<<<<<<<<bartender func>>>>>>>>>>>>>>>>>"""
@@ -344,7 +399,12 @@ def register_user(request):
         if User.objects.filter(email=email).exists():
             messages.error(request, f'Email {email} already taken!')
             return redirect('register')
-        User.objects.create_user(username=username, email=email, password=password)
+        user = User.objects.create_user(username=username, email=email, password=password)
+
+        default_group_name = "user"  # Change this to "bartender" if needed
+        group = Group.objects.get(name=default_group_name)  # Get the group
+        user.groups.add(group)  # Assign the user to the group
+
         messages.info(request, f'User {username} registered!')
         return redirect('login')
 
@@ -371,3 +431,62 @@ def get_user_profile(request):
 
 
 """<<<<<<<<<<<<<Profile user func>>>>>>>>>>>>>>>>>"""
+
+
+def export_cocktail_pdf(request, cocktail_id):
+    """
+    Generates a PDF file with the cocktail's details and serves it as a downloadable file.
+    """
+    cocktail = get_object_or_404(Cocktail, id=cocktail_id)
+    ingredients = CocktailIngredient.objects.filter(cocktail=cocktail)
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{cocktail.name}.pdf"'
+
+    # Create PDF
+    p = canvas.Canvas(response, pagesize=letter)
+    width, height = letter
+    y_position = height - 50
+
+    # Title
+    p.setFont("Helvetica-Bold", 18)
+    p.drawString(50, y_position, f"Cocktail: {cocktail.name}")
+    y_position -= 30
+
+    # Category & Alcoholic Status
+    p.setFont("Helvetica", 12)
+    p.drawString(50, y_position, f"Category: {cocktail.category.name if cocktail.category else 'Not Assigned'}")
+    y_position -= 20
+
+    alcohol_status = "Yes" if cocktail.is_alcoholic else "No"
+    p.drawString(50, y_position, f"Alcoholic: {alcohol_status}")
+    y_position -= 20
+
+    # Add Classic/Customized Status
+    cocktail_type = "Classic" if cocktail.is_classic else "Customized"
+    p.drawString(50, y_position, f"Type: {cocktail_type}")
+    y_position -= 30
+
+    # Ingredients
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y_position, "Ingredients:")
+    y_position -= 20
+    p.setFont("Helvetica", 12)
+
+    for ingredient_entry in ingredients:
+        p.drawString(60, y_position, f"- {ingredient_entry.ingredient.name}: {ingredient_entry.amount}")
+        y_position -= 20
+
+    # Instructions
+    y_position -= 20
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(50, y_position, "Instructions:")
+    y_position -= 20
+    p.setFont("Helvetica", 12)
+    p.drawString(60, y_position, cocktail.instructions)
+
+    # Save PDF
+    p.showPage()
+    p.save()
+
+    return response
